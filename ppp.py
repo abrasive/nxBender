@@ -16,12 +16,9 @@ class PPPSession(object):
                 'ktune',
                 'local',
                 'noipdefault',
-                'noccp',
+                'noccp',    # server is buggy
                 'noauth',
-                'novj',
                 'nomp',
-                'nopcomp',
-                'noaccomp',
                 'usepeerdns',
         ]
 
