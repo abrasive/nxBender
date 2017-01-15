@@ -3,6 +3,8 @@ import requests
 import logging
 import sslconn
 import ppp
+import pyroute2
+import ipaddress
 
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
@@ -100,7 +102,15 @@ class NXSession(object):
         """
 
         tunsock = sslconn.SSLTunnel(self.srv_options['SessionId'], self.options, self.host, 443)
-        pppd = ppp.PPPSession(self.options, tunsock)
+        pppd = ppp.PPPSession(self.options, tunsock, routecallback=self.setup_routes)
 
         pppd.wait()
         tunsock.close()
+
+    def setup_routes(self, gateway):
+        ip = pyroute2.IPRoute()
+
+        for route in self.routes:
+            net = ipaddress.IPv4Network(unicode(route))
+            dst = '%s/%d' % (net.network_address, net.prefixlen)
+            ip.route("add", dst=dst, gateway=gateway)
