@@ -1,5 +1,11 @@
 #!/usr/bin/env python2
 
+"""
+nxBender: a replacement client for Dell/SonicWall netExtender SSL VPNs
+
+(c) 2017 James Laird-Wah
+"""
+
 import nx
 import configargparse
 import requests
