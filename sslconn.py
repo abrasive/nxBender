@@ -2,6 +2,8 @@ import ssl
 import socket
 import hashlib
 import struct
+import logging
+import sys
 
 class SSLConnection(object):
     def __init__(self, options, host, port):
@@ -10,13 +12,23 @@ class SSLConnection(object):
         sock = socket.socket()
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.connect((host, port))
+
         self.s = ssl.wrap_socket(sock)
+
+        if getattr(options, 'fingerprint', False):
+            if self.fingerprint != options.fingerprint.lower():
+                logging.error("Certificate fingerprint verification failed; server's fingerprint is %s" % self.fingerprint)
+                sys.exit(1)
 
     @property
     def fingerprint(self):
         cert = self.s.getpeercert(True)
         raw = hashlib.sha1(cert).digest()
         return ':'.join(['%02x' % ord(c) for c in raw])
+
+def print_fingerprint(host):
+    conn = SSLConnection(None, host, 443)
+    print "Server's certificate fingerprint: %s" % conn.fingerprint
 
 class SSLTunnel(SSLConnection):
     def __init__(self, session_id, *args, **kwargs):

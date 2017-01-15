@@ -3,7 +3,20 @@ import requests
 import logging
 import sslconn
 import ppp
-import options
+
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.poolmanager import PoolManager
+
+class FingerprintAdapter(HTTPAdapter):
+    """"Transport adapter" that allows us to pin a fingerprint for the `requests` library."""
+    def __init__(self, fingerprint):
+        self.fingerprint = fingerprint
+        super(FingerprintAdapter, self).__init__()
+
+    def init_poolmanager(self, connections, maxsize, block=False):
+        self.poolmanager = PoolManager(
+            num_pools=connections, maxsize=maxsize,
+            block=block, assert_fingerprint=self.fingerprint)
 
 class NXSession(object):
     def __init__(self, options):
@@ -13,7 +26,10 @@ class NXSession(object):
         self.host = self.options.server
         self.session = requests.Session()
 
-        self.session.verify = False # XXX pin instead
+        if self.options.fingerprint:
+            self.session.verify = False
+            self.session.mount('https://', FingerprintAdapter(self.options.fingerprint))
+
         self.session.headers = {
                 'User-Agent': 'Dell SonicWALL NetExtender for Linux 8.1.789',
         }
