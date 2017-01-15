@@ -6,7 +6,7 @@ import logging
 import sys
 
 class PPPSession(object):
-    def __init__(self, tunnelsock, defaultroute=False):
+    def __init__(self, options, tunnelsock, defaultroute=False):
         pppargs = [
                 'debug',
 
@@ -24,6 +24,10 @@ class PPPSession(object):
                 'noaccomp',
                 'usepeerdns',
         ]
+
+        if options.show_ppp_log:
+            pppargs.extend(['logfd', '2'])
+
         master, slave = pty.openpty()
         self.pty = master
 
@@ -59,7 +63,7 @@ class PPPSession(object):
     def stop(self, stop_reason):
         if self.stop_reason is None:
             self.stop_reason = stop_reason
-            print 'STOPPING: %s' % stop_reason
+            logging.info('Exiting: %s' % stop_reason)
 
         self.stopping = True
         try:
@@ -89,6 +93,3 @@ class PPPSession(object):
             except OSError:
                 # pppd closed the pipe; this is caught by wait() above
                 return
-
-
-

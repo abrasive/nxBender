@@ -4,7 +4,9 @@ import hashlib
 import struct
 
 class SSLConnection(object):
-    def __init__(self, host, port):
+    def __init__(self, options, host, port):
+        self.options = options
+
         sock = socket.socket()
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.connect((host, port))
@@ -17,8 +19,8 @@ class SSLConnection(object):
         return ':'.join(['%02x' % ord(c) for c in raw])
 
 class SSLTunnel(SSLConnection):
-    def __init__(self, session_id, host, port):
-        super(SSLTunnel, self).__init__(host, port)
+    def __init__(self, session_id, *args, **kwargs):
+        super(SSLTunnel, self).__init__(*args, **kwargs)
 
         headers={
             'X-SSLVPN-PROTOCOL': '2.0',
@@ -38,7 +40,8 @@ class SSLTunnel(SSLConnection):
     def write(self, data):
         buf = struct.pack('>L', len(data)) + data
 
-        print ">>> ", " ".join(['%02x' % ord(x) for x in buf])
+        if self.options.dump_packets:
+            print ">>> ", " ".join(['%02xdump_packets:' % ord(x) for x in buf])
 
         self.s.write(buf)
 
@@ -48,7 +51,10 @@ class SSLTunnel(SSLConnection):
             raise IOError("Short read from server")
         plen, = struct.unpack('>L', length)
         data = self.s.read(plen)
-        print "<<< ", " ".join(['%02x' % ord(x) for x in data])
+
+        if self.options.dump_packets:
+            print "<<< ", " ".join(['%02x' % ord(x) for x in data])
+
         if len(data) != plen:
             raise IOError("Short read from server")
         return data
