@@ -36,13 +36,17 @@ class NXSession(object):
                 'User-Agent': 'Dell SonicWALL NetExtender for Linux 8.1.789',
         }
 
+        logging.info("Logging in...")
         self.login(
                 self.options.username,
                 self.options.password,
                 self.options.domain
             )
+
+        logging.info("Starting session...")
         self.start_session()
 
+        logging.info("Dialing up tunnel...")
         self.tunnel()
 
     def login(self, username, password, domain):
@@ -114,3 +118,5 @@ class NXSession(object):
             net = ipaddress.IPv4Network(unicode(route))
             dst = '%s/%d' % (net.network_address, net.prefixlen)
             ip.route("add", dst=dst, gateway=gateway)
+
+        logging.info("Remote routing configured, VPN is up")
