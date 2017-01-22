@@ -41,3 +41,6 @@ def main():
         logging.error("SSL error: %s" % e)
         # print the server's fingerprint for the user to consider
         sslconn.print_fingerprint(args.server)
+    except requests.exceptions.ConnectionError, e:
+        message = e.message.reason.message.split(':')[1:][-1]   # yuk
+        logging.error("Error connecting to remote host: %s" % message)
