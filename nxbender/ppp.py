@@ -4,9 +4,10 @@ import pty
 import os
 import logging
 import sys
+import sslconn
 
 class PPPSession(object):
-    def __init__(self, options, tunnelsock, routecallback=None, defaultroute=False):
+    def __init__(self, options, session_id, routecallback=None, defaultroute=False):
         pppargs = [
                 'debug',
                 'logfd', '2',   # we extract the remote IP thru this
@@ -40,7 +41,7 @@ class PPPSession(object):
 
         os.close(slave)
 
-        self.sock = tunnelsock
+        self.sock = sslconn.SSLTunnel(session_id, options, options.server, 443)
 
         self.stopping = False
         self.stop_reason = None

@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 import requests
 import logging
-import sslconn
 import ppp
 import pyroute2
 import ipaddress
@@ -105,11 +104,8 @@ class NXSession(object):
         Begin PPP tunneling.
         """
 
-        tunsock = sslconn.SSLTunnel(self.srv_options['SessionId'], self.options, self.host, 443)
-        pppd = ppp.PPPSession(self.options, tunsock, routecallback=self.setup_routes)
-
+        pppd = ppp.PPPSession(self.options, self.srv_options['SessionId'], routecallback=self.setup_routes)
         pppd.wait()
-        tunsock.close()
 
     def setup_routes(self, gateway):
         ip = pyroute2.IPRoute()
