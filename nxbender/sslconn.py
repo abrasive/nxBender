@@ -77,10 +77,6 @@ class SSLTunnel(SSLConnection):
 
     def write(self, data):
         buf = struct.pack('>L', len(data)) + data
-
-        if self.options.dump_packets:
-            print ">>> ", " ".join(['%02xdump_packets:' % ord(x) for x in buf])
-
         self.s.write(buf)
 
     def close(self):
