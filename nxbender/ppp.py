@@ -60,7 +60,10 @@ class PPPSession(object):
                 if stop:
                     break
         finally:
-            self.pppd.terminate()
+            try:
+                self.pppd.terminate()
+            except OSError:
+                pass    # already dead
             retcode = self.pppd.wait()
             logging.info("pppd exited with code %d" % retcode)
             signal.signal(signal.SIGINT, old_sigint)
@@ -80,7 +83,11 @@ class PPPSession(object):
                 data = os.read(self.pty, 8192)
             except OSError:
                 return True # EOF
-            self.tunsock.write(data)
+            try:
+                self.tunsock.write(data)
+            except ssl.SSLWantWriteError:
+                logging.error('SSL connection lost')
+                return True # broken link
 
         if self.pppd.stderr in r:
             line = self.pppd.stderr.readline().strip()
