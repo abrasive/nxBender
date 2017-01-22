@@ -10,7 +10,11 @@ import select
 
 class PPPSession(object):
     def __init__(self, options, session_id, routecallback=None, defaultroute=False):
-        pppargs = [
+        self.options = options
+        self.session_id = session_id
+        self.routecallback = routecallback
+
+        self.pppargs = [
                 'debug', 'debug',
                 'dump',
                 'logfd', '2',   # we extract the remote IP thru this
@@ -27,14 +31,12 @@ class PPPSession(object):
                 'usepeerdns',
         ]
 
+    def run(self):
         master, slave = pty.openpty()
         self.pty = master
 
-        self.options = options
-        self.routecallback = routecallback
-
         try:
-            self.pppd = subprocess.Popen(['pppd'] + pppargs,
+            self.pppd = subprocess.Popen(['pppd'] + self.pppargs,
                                          stdin = slave,
                                          stdout = slave,
                                          stderr = subprocess.PIPE)
@@ -44,7 +46,7 @@ class PPPSession(object):
 
         os.close(slave)
 
-        self.tunsock = sslconn.SSLTunnel(session_id, options, options.server, options.port)
+        self.tunsock = sslconn.SSLTunnel(self.session_id, self.options, self.options.server, self.options.port)
         self.pty = master
 
         def sigint(*args):

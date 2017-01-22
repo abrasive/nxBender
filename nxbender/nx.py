@@ -105,6 +105,7 @@ class NXSession(object):
         """
 
         pppd = ppp.PPPSession(self.options, self.srv_options['SessionId'], routecallback=self.setup_routes)
+        pppd.run()
 
     def setup_routes(self, gateway):
         ip = pyroute2.IPRoute()
