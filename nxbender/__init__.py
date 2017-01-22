@@ -18,7 +18,7 @@ parser.add_argument('-d', '--domain', required=True)
 
 parser.add_argument('-f', '--fingerprint', help='Verify server\'s SSL certificate has this fingerprint. Overrides all other certificate verification.')
 
-parser.add_argument('-q', '--quiet', help='Don\t output basic info whilst running')
+parser.add_argument('-q', '--quiet', help='Don\'t output basic info whilst running')
 parser.add_argument('--dump-packets', help='Dump raw packets being sent and received')
 parser.add_argument('--show-ppp-log', action='store_true', help='Print PPP log messages to stdout')
 
