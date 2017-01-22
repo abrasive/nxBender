@@ -41,7 +41,7 @@ class PPPSession(object):
 
         os.close(slave)
 
-        self.sock = sslconn.SSLTunnel(session_id, options, options.server, 443)
+        self.sock = sslconn.SSLTunnel(session_id, options, options.server, options.port)
 
         self.stopping = False
         self.stop_reason = None

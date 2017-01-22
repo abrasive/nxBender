@@ -12,6 +12,7 @@ parser = configargparse.ArgumentParser(
 parser.add_argument('-c', '--conf', is_config_file=True)
 
 parser.add_argument('-s', '--server', required=True)
+parser.add_argument('-P', '--port', type=int, default=443, help='Server port - default 443')
 parser.add_argument('-u', '--username', required=True)
 parser.add_argument('-p', '--password', required=True)
 parser.add_argument('-d', '--domain', required=True)

@@ -24,7 +24,7 @@ class NXSession(object):
         self.options = options
 
     def run(self):
-        self.host = self.options.server
+        self.host = self.options.server + ':%d' % self.options.port
         self.session = requests.Session()
 
         if self.options.fingerprint:
