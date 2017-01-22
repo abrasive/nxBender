@@ -4,6 +4,7 @@ import hashlib
 import struct
 import logging
 import sys
+import os
 
 class SSLConnection(object):
     def __init__(self, options, host, port):
@@ -49,6 +50,31 @@ class SSLTunnel(SSLConnection):
 
         self.s.write('\r\n')
 
+        self.s.setblocking(0)
+
+        self.buf = ''
+
+    def fileno(self):
+        return self.s.fileno()
+
+    def read_to(self, target_fd):
+        try:
+            data = self.s.read(8192)
+            self._handle_data(data, target_fd)
+        except ssl.SSLWantReadError:
+            return
+
+    def _handle_data(self, data, target):
+        self.buf += data
+
+        while len(self.buf) > 4:
+            plen, = struct.unpack('>L', self.buf[:4])
+            if len(self.buf) < 4 + plen:
+                return
+
+            os.write(target, self.buf[4:4+plen])
+            self.buf = self.buf[4+plen:]
+
     def write(self, data):
         buf = struct.pack('>L', len(data)) + data
 
@@ -56,20 +82,6 @@ class SSLTunnel(SSLConnection):
             print ">>> ", " ".join(['%02xdump_packets:' % ord(x) for x in buf])
 
         self.s.write(buf)
-
-    def read(self):
-        length = self.s.read(4)
-        if len(length) != 4:
-            raise IOError("Short read from server")
-        plen, = struct.unpack('>L', length)
-        data = self.s.read(plen)
-
-        if self.options.dump_packets:
-            print "<<< ", " ".join(['%02x' % ord(x) for x in data])
-
-        if len(data) != plen:
-            raise IOError("Short read from server")
-        return data
 
     def close(self):
         self.s.close()

@@ -5,6 +5,8 @@ import os
 import logging
 import sys
 import sslconn
+import signal
+import select
 
 class PPPSession(object):
     def __init__(self, options, session_id, routecallback=None, defaultroute=False):
@@ -41,77 +43,44 @@ class PPPSession(object):
 
         os.close(slave)
 
-        self.sock = sslconn.SSLTunnel(session_id, options, options.server, options.port)
+        self.tunsock = sslconn.SSLTunnel(session_id, options, options.server, options.port)
+        self.pty = master
 
-        self.stopping = False
-        self.stop_reason = None
+        def sigint(*args):
+            logging.info('caught SIGINT, signalling pppd')
+            self.pppd.send_signal(signal.SIGINT)
+        old_sigint = signal.signal(signal.SIGINT, sigint)
 
-        self.p2s_thread = threading.Thread(target=self.ppp2sock)
-        self.p2s_thread.start()
-        self.s2p_thread = threading.Thread(target=self.sock2ppp)
-        self.s2p_thread.start()
-        self.stderr_thread = threading.Thread(target=self.handle_stderr)
-        self.stderr_thread.start()
-
-    def wait(self):
         try:
-            code = self.pppd.wait()
-            stop_reason = 'pppd exited with code %d' % code
-        except KeyboardInterrupt:
-            stop_reason = 'SIGINT received'
-
-        self.stop(stop_reason)
-
-    def stop(self, stop_reason):
-        if self.stop_reason is None:
-            self.stop_reason = stop_reason
-            logging.info('Exiting: %s' % stop_reason)
-
-        self.stopping = True
-        try:
+            while self.pppd.poll() is None:
+                stop = self._pump()
+                if stop:
+                    break
+        finally:
             self.pppd.terminate()
-        except OSError: # it's already dead
-            pass
+            retcode = self.pppd.wait()
+            logging.info("pppd exited with code %d" % retcode)
+            signal.signal(signal.SIGINT, old_sigint)
+            self.tunsock.close()
 
-        self.p2s_thread.join()
-        self.s2p_thread.join()
-        self.stderr_thread.join()
+    def _pump(self):
+        try:
+            r, w, x = select.select([self.tunsock, self.pty, self.pppd.stderr], [], [])
+        except select.error:
+            return True   # interrupted
 
-    def ppp2sock(self):
-        while not self.stopping:
+        if self.tunsock in r:
+            self.tunsock.read_to(self.pty)
+
+        if self.pty in r:
             try:
-                self.sock.write(os.read(self.pty, 65536))
-            except IOError:
-                self.stop('SSL write failed')
+                data = os.read(self.pty, 8192)
             except OSError:
-                # pppd closed the pipe; this is caught by wait() above
-                return
+                return True # EOF
+            self.tunsock.write(data)
 
-    def sock2ppp(self):
-        while not self.stopping:
-            try:
-                os.write(self.pty, self.sock.read())
-            except IOError:
-                self.stop('SSL read failed')
-            except OSError:
-                # pppd closed the pipe; this is caught by wait() above
-                return
-
-    def handle_stderr(self):
-        """Read and handle pppd's output on stderr.
-
-        The primary purpose of this is to detect the remote endpoint
-        address so that we can set up routing. This replaces the classic
-        mechanism using /etc/ip-up; the reason being that the ip-up
-        system is different on different distributions and so it's a
-        little messy to work with, and this keeps all the mess in one box
-        instead.
-        """
-        while not self.stopping:
-            try:
-                line = self.pppd.stderr.readline().strip()
-            except IOError:
-                return
+        if self.pppd.stderr in r:
+            line = self.pppd.stderr.readline().strip()
 
             if self.options.show_ppp_log:
                 print "pppd: %s" % line
