@@ -11,7 +11,8 @@ import select
 class PPPSession(object):
     def __init__(self, options, session_id, routecallback=None, defaultroute=False):
         pppargs = [
-                'debug',
+                'debug', 'debug',
+                'dump',
                 'logfd', '2',   # we extract the remote IP thru this
 
                 'lcp-echo-interval', '10',
