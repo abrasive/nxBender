@@ -61,10 +61,7 @@ class PPPSession(object):
                 if stop:
                     break
         finally:
-            try:
-                self.pppd.terminate()
-            except OSError:
-                pass    # already dead
+            os.close(self.pty)
             retcode = self.pppd.wait()
             logging.info("pppd exited with code %d" % retcode)
             signal.signal(signal.SIGINT, old_sigint)
