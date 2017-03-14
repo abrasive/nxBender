@@ -76,8 +76,11 @@ class SSLTunnel(SSLConnection):
             self.buf = self.buf[4+plen:]
 
     def write(self, data):
-        buf = struct.pack('>L', len(data)) + data
-        self.s.write(buf)
+        while len(data):
+            packet = data[:1514]
+            buf = struct.pack('>L', len(packet)) + packet
+            self.s.write(buf)
+            data = data[len(packet):]
 
     def close(self):
         self.s.close()
