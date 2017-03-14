@@ -5,6 +5,7 @@ import os
 import logging
 import sys
 import sslconn
+import ssl
 import signal
 import select
 
