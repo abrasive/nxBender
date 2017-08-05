@@ -29,8 +29,12 @@ class PPPSession(object):
                 'noipdefault',
                 'noccp',    # server is buggy
                 'noauth',
-                'nomp',
+                'novj',
+                'nopcomp',
+                'noaccomp',
                 'usepeerdns',
+                'mtu', '1280',
+                'mru', '1280',
         ]
 
     def run(self):

@@ -36,20 +36,21 @@ class SSLTunnel(SSLConnection):
         super(SSLTunnel, self).__init__(*args, **kwargs)
 
         headers={
-            'X-SSLVPN-PROTOCOL': '2.0',
-            'X-SSLVPN-SERVICE': 'NETEXTENDER',
+            'X-SSLVPN-PROTOCOL': ' 2.0',
+            'X-SSLVPN-SERVICE': ' NETEXTENDER',
             'Proxy-Authorization': session_id,
-            'X-NX-Client-Platform': 'Linux',
-            'Connection-Medium': 'MacOS',
-            'X-NE-PROTOCOL': '2.0',
-            'Frame-Encode': 'off',
+            'X-NX-Client-Platform': ' Linux',
+            'Connection-Medium': ' MacOS',
+            'User-Agent':' SonicWALL NetExtender for Linux 8.6.800',
+            'X-NE-PROTOCOL': ' 2.0',
+            'Frame-Encode':' off',
         }
+        hdr = "CONNECT localhost:0 HTTP/1.0\r\n"
+        for h in headers.iteritems():
+            hdr = hdr + ('%s:%s\r\n' % h)
 
-        self.s.write('CONNECT localhost:0  HTTP/1.0\r\n')
-        for hdr in headers.iteritems():
-            self.s.write('%s: %s\r\n' % hdr)
-
-        self.s.write('\r\n')
+        hdr = hdr + '\r\n'
+        self.s.write(hdr)
 
         self.s.setblocking(0)
 

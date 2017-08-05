@@ -33,7 +33,8 @@ class NXSession(object):
             self.session.mount('https://', FingerprintAdapter(self.options.fingerprint))
 
         self.session.headers = {
-                'User-Agent': 'Dell SonicWALL NetExtender for Linux 8.1.789',
+                'User-Agent': 'SonicWALL NetExtender for Linux 8.6.800',
+                'X-NE-pda': 'true',
         }
 
         logging.info("Logging in...")
@@ -46,22 +47,26 @@ class NXSession(object):
         logging.info("Starting session...")
         self.start_session()
 
+        logging.info("Logging out ...")
+        self.session.cookies = requests.cookies.cookiejar_from_dict(self.loginCookie)
+        self.logout()
+
         logging.info("Dialing up tunnel...")
         self.tunnel()
 
     def login(self, username, password, domain):
         resp = self.session.post('https://%s/cgi-bin/userLogin' % self.host,
-                                 data={
-                                     'username': username,
-                                     'password': password,
-                                     'domain': domain,
-                                     'login': 'true',
+                                data={
+                                    "username": username,
+                                    "password": password,
+                                    "domain": domain,
+                                    "login": "true"
                                  },
                                  headers={
                                      'X-NE-SESSIONPROMPT': 'true',
                                  },
                                 )
-
+        self.loginCookie = requests.utils.dict_from_cookiejar(self.session.cookies)
         error = resp.headers.get('X-NE-Message', None)
         error = resp.headers.get('X-NE-message', error)
         if error:
@@ -96,6 +101,7 @@ class NXSession(object):
         if error:
             raise IOError('Server returned error: %s' % error)
 
+        self.cookie = requests.utils.dict_from_cookiejar(self.session.cookies)
         srv_options = {}
         routes = []
 
@@ -104,15 +110,24 @@ class NXSession(object):
             line = line.strip()
             if line.startswith('<'):
                 continue
+            if line.startswith('}'):
+                continue
 
-            key, value = line.split(' = ', 1)
+            try:
+                key, value = line.split(' =', 1)
+                key = key.strip()
+                value = value.strip()
+                if value[-1:] == ';' :
+                    value = value[:-1]
 
-            if key == 'Route':
-                routes.append(value)
-            elif key not in srv_options:
-                srv_options[key] = value
-            else:
-                logging.info('Duplicated srv_options value %s = %s' % (key, value))
+                if key == 'Route':
+                    routes.append(value)
+                elif key not in srv_options:
+                    srv_options[key] = value
+                else:
+                    logging.info('Duplicated srv_options value %s = %s' % (key, value))
+            except:
+                logging.info("Unparsed line ...")
 
         self.srv_options = srv_options
         self.routes = routes
@@ -122,7 +137,7 @@ class NXSession(object):
         Begin PPP tunneling.
         """
 
-        pppd = ppp.PPPSession(self.options, self.srv_options['SessionId'], routecallback=self.setup_routes)
+        pppd = ppp.PPPSession(self.options, self.cookie['swap'], routecallback=self.setup_routes)
         pppd.run()
 
     def setup_routes(self, gateway):
