@@ -51,9 +51,15 @@ class PPPSession(object):
         self.tunsock = sslconn.SSLTunnel(self.session_id, self.options, self.options.server, self.options.port)
         self.pty = master
 
+        def sigint_twice(*args):
+            logging.info('caught SIGINT again, killing pppd')
+            self.pppd.send_signal(signal.SIGKILL)
+
         def sigint(*args):
             logging.info('caught SIGINT, signalling pppd')
-            self.pppd.send_signal(signal.SIGINT)
+            self.pppd.send_signal(signal.SIGTERM)
+            signal.signal(signal.SIGINT, sigint_twice)
+
         old_sigint = signal.signal(signal.SIGINT, sigint)
 
         try:
