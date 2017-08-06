@@ -53,16 +53,26 @@ class SSLTunnel(SSLConnection):
         self.s.setblocking(0)
 
         self.buf = ''
+        self.wbuf = ''
 
     def fileno(self):
         return self.s.fileno()
 
     def read_to(self, target_fd):
+        while True:
+            try:
+                data = self.s.recv(8192)
+                self._handle_data(data, target_fd)
+            except ssl.SSLWantReadError:
+                return
+
+    def write_from(self, src_fd):
         try:
-            data = self.s.read(8192)
-            self._handle_data(data, target_fd)
-        except ssl.SSLWantReadError:
-            return
+            data = os.read(src_fd, 8192)
+        except OSError:
+            return True # EOF from pppd
+
+        self.write(data)
 
     def _handle_data(self, data, target):
         self.buf += data
@@ -76,11 +86,22 @@ class SSLTunnel(SSLConnection):
             self.buf = self.buf[4+plen:]
 
     def write(self, data):
-        while len(data):
-            packet = data[:1514]
+        self.wbuf += data
+        self.write_pump()
+
+    @property
+    def writes_pending(self):
+        return len(self.wbuf) > 0
+
+    def write_pump(self):
+        while len(self.wbuf):
+            packet = self.wbuf[:1514]
             buf = struct.pack('>L', len(packet)) + packet
-            self.s.write(buf)
-            data = data[len(packet):]
+            try:
+                self.s.sendall(buf)
+                self.wbuf = self.wbuf[len(packet):]
+            except ssl.SSLWantWriteError:
+                return
 
     def close(self):
         self.s.close()

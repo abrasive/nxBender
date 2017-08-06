@@ -77,8 +77,17 @@ class PPPSession(object):
             self.tunsock.close()
 
     def _pump(self):
+        r_set = [self.tunsock, self.pppd.stderr]
+        w_set = []
+
+        # If the SSL tunnel is blocked on writes, apply backpressure (stop reading from pppd)
+        if self.tunsock.writes_pending:
+            w_set.append(self.tunsock)
+        else:
+            r_set.append(self.pty)
+
         try:
-            r, w, x = select.select([self.tunsock, self.pty, self.pppd.stderr], [], [])
+            r, w, x = select.select(r_set, w_set, [])
         except select.error:
             return True   # interrupted
 
@@ -86,15 +95,12 @@ class PPPSession(object):
             self.tunsock.read_to(self.pty)
 
         if self.pty in r:
-            try:
-                data = os.read(self.pty, 8192)
-            except OSError:
-                return True # EOF
-            try:
-                self.tunsock.write(data)
-            except ssl.SSLWantWriteError:
-                logging.error('SSL connection lost')
-                return True # broken link
+            stop = self.tunsock.write_from(self.pty)
+            if stop:
+                return stop
+
+        if self.tunsock in w:
+            self.tunsock.write_pump()
 
         if self.pppd.stderr in r:
             line = self.pppd.stderr.readline().strip()
