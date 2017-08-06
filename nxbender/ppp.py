@@ -8,6 +8,7 @@ import sslconn
 import ssl
 import signal
 import select
+import socket
 
 class PPPSession(object):
     def __init__(self, options, session_id, routecallback=None):
@@ -60,6 +61,8 @@ class PPPSession(object):
                 stop = self._pump()
                 if stop:
                     break
+        except socket.error, e:
+            logging.error(e.strerror)
         finally:
             os.close(self.pty)
             retcode = self.pppd.wait()
