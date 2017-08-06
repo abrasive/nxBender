@@ -67,7 +67,9 @@ class PPPSession(object):
                 stop = self._pump()
                 if stop:
                     break
-        except socket.error, e:
+        except ssl.SSLError, e:     # unexpected
+            logging.exception(e)
+        except socket.error, e:     # expected (peer disconnect)
             logging.error(e.strerror)
         finally:
             os.close(self.pty)
