@@ -63,6 +63,7 @@ class PPPSession(object):
 
         old_sigint = signal.signal(signal.SIGINT, sigint)
         signal.signal(signal.SIGHUP, signal.SIG_IGN)
+        signal.signal(signal.SIGWINCH, signal.SIG_IGN)
 
         try:
             while self.pppd.poll() is None:
