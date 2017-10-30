@@ -59,8 +59,10 @@ class PPPSession(object):
             logging.info('caught SIGINT, signalling pppd')
             self.pppd.send_signal(signal.SIGTERM)
             signal.signal(signal.SIGINT, sigint_twice)
+            os.kill(os.getpid(), signal.SIGHUP) # break out of select()
 
         old_sigint = signal.signal(signal.SIGINT, sigint)
+        signal.signal(signal.SIGHUP, signal.SIG_IGN)
 
         try:
             while self.pppd.poll() is None:
@@ -72,9 +74,14 @@ class PPPSession(object):
         except socket.error, e:     # expected (peer disconnect)
             logging.error(e.strerror)
         finally:
+            if self.pppd.poll() is not None:    # pppd caused termination
+                logging.info("pppd exited with code %d" % self.pppd.poll())
+            else:
+                self.pppd.send_signal(signal.SIGHUP)
+
+            logging.info("Shutting down...")
             os.close(self.pty)
-            retcode = self.pppd.wait()
-            logging.info("pppd exited with code %d" % retcode)
+            self.pppd.wait()
             signal.signal(signal.SIGINT, old_sigint)
             self.tunsock.close()
 
