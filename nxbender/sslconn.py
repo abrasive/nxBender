@@ -62,6 +62,8 @@ class SSLTunnel(SSLConnection):
         while True:
             try:
                 data = self.s.recv(8192)
+                if len(data) == 0:
+                    return
                 self._handle_data(data, target_fd)
             except ssl.SSLWantReadError:
                 return
