@@ -42,6 +42,7 @@ class SSLTunnel(SSLConnection):
             'X-NX-Client-Platform': 'Linux',
             'Connection-Medium': 'MacOS',
             'X-NE-PROTOCOL': '2.0',
+            'Frame-Encode': 'off',
         }
 
         self.s.write('CONNECT localhost:0  HTTP/1.0\r\n')
