@@ -59,6 +59,7 @@ class NXSession(object):
                                 )
 
         error = resp.headers.get('X-NE-Message', None)
+        error = resp.headers.get('X-NE-message', error)
         if error:
             raise IOError('Server returned error: %s' % error)
 
@@ -77,6 +78,10 @@ class NXSession(object):
                                     'supportipv6': 'no',
                                 },
                                )
+        error = resp.headers.get('X-NE-Message', None)
+        error = resp.headers.get('X-NE-message', error)
+        if error:
+            raise IOError('Server returned error: %s' % error)
 
         srv_options = {}
         routes = []
