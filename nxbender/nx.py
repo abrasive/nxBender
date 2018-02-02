@@ -4,6 +4,7 @@ import logging
 import ppp
 import pyroute2
 import ipaddress
+import atexit
 
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
@@ -62,6 +63,15 @@ class NXSession(object):
         error = resp.headers.get('X-NE-message', error)
         if error:
             raise IOError('Server returned error: %s' % error)
+
+        atexit.register(self.logout)
+
+    def logout(self):
+        # We need to try, but if we went down because we can't talk to the server? - not a big deal.
+        try:
+            self.session.get('https://%s/cgi-bin/userLogout' % self.host)
+        except:
+            pass
 
     def start_session(self):
         """
