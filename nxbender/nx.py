@@ -56,7 +56,10 @@ class NXSession(object):
                                      'password': password,
                                      'domain': domain,
                                      'login': 'true',
-                                 }
+                                 },
+                                 headers={
+                                     'X-NE-SESSIONPROMPT': 'true',
+                                 },
                                 )
 
         error = resp.headers.get('X-NE-Message', None)
