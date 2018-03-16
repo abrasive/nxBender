@@ -3,6 +3,7 @@ import configargparse
 import requests
 import sslconn
 import logging
+import getpass
 
 parser = configargparse.ArgumentParser(
         description='Connect to a netExtender VPN',
@@ -14,7 +15,7 @@ parser.add_argument('-c', '--conf', is_config_file=True)
 parser.add_argument('-s', '--server', required=True)
 parser.add_argument('-P', '--port', type=int, default=443, help='Server port - default 443')
 parser.add_argument('-u', '--username', required=True)
-parser.add_argument('-p', '--password', required=True)
+parser.add_argument('-p', '--password', required=False)
 parser.add_argument('-d', '--domain', required=True)
 
 parser.add_argument('-f', '--fingerprint', help='Verify server\'s SSL certificate has this fingerprint. Overrides all other certificate verification.')
@@ -30,6 +31,9 @@ def main():
         loglevel = logging.WARNING
     else:
         loglevel = logging.INFO
+
+    if not args.password:
+        args.password = getpass.getpass()
 
     logging.basicConfig(level=loglevel, format='%(levelname)s: %(message)s')
 
