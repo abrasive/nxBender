@@ -21,6 +21,7 @@ Very simply:
 ```
     sudo ./nxBender --server my-sslvpn-host.com -u username -p password -d domainname
 ```
+`-p password`  is optional, if not supplied it will ask interactively on the commandline
 
 You can supply the server's SSL certificate fingerprint with `--fingerprint` if
 you're using self-signed certificates or if you want pinning.
