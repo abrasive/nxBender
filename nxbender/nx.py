@@ -128,7 +128,7 @@ class NXSession(object):
     def setup_routes(self, gateway):
         ip = pyroute2.IPRoute()
 
-        for route in self.routes:
+        for route in set(self.routes):
             net = ipaddress.IPv4Network(unicode(route))
             dst = '%s/%d' % (net.network_address, net.prefixlen)
             ip.route("add", dst=dst, gateway=gateway)
