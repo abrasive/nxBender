@@ -108,7 +108,7 @@ class SSLTunnel(SSLConnection):
         while len(self.wbuf):
             packet = self.wbuf[:1514]
             buf = struct.pack('>L', len(packet)) + packet
-            n = self.s.send(buf)
+            n = self.s.sendall(buf)
             if n == len(buf):
                 self.wbuf = self.wbuf[len(packet):]
             else:
