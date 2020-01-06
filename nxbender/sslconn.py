@@ -80,6 +80,15 @@ class SSLTunnel(SSLConnection):
         self.buf += data
 
         while len(self.buf) > 4:
+            if self.buf[:4] == b'HTTP':
+                # wait for entire line if needed
+                if not b'\r\n' in self.buf:
+                    return
+                lines = self.buf.split('\r\n')
+                parts = lines[0].split(' ', 3)
+                logging.error('Server returned error: %s' % parts[-1])
+                sys.exit(1)
+
             plen, = struct.unpack('>L', self.buf[:4])
             if len(self.buf) < 4 + plen:
                 return
