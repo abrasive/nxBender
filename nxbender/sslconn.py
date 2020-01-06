@@ -45,11 +45,10 @@ class SSLTunnel(SSLConnection):
             'Frame-Encode': 'off',
         }
 
-        self.s.write('CONNECT localhost:0  HTTP/1.0\r\n')
-        for hdr in headers.iteritems():
-            self.s.write('%s: %s\r\n' % hdr)
-
-        self.s.write('\r\n')
+        buf = 'CONNECT localhost:0 HTTP/1.0\r\n'
+        buf += '\r\n'.join('%s: %s' % h for h in headers.iteritems())
+        buf += '\r\n\r\n'
+        self.s.sendall(buf)
 
         self.s.setblocking(0)
 
