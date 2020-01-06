@@ -29,7 +29,7 @@ class SSLConnection(object):
 
 def print_fingerprint(host):
     conn = SSLConnection(None, host, 443)
-    print "Server's certificate fingerprint: %s" % conn.fingerprint
+    print("Server's certificate fingerprint: %s" % conn.fingerprint)
 
 class SSLTunnel(SSLConnection):
     def __init__(self, session_id, *args, **kwargs):
@@ -46,14 +46,14 @@ class SSLTunnel(SSLConnection):
         }
 
         buf = 'CONNECT localhost:0 HTTP/1.0\r\n'
-        buf += '\r\n'.join('%s: %s' % h for h in headers.iteritems())
+        buf += '\r\n'.join('%s: %s' % h for h in headers.items())
         buf += '\r\n\r\n'
-        self.s.sendall(buf)
+        self.s.sendall(buf.encode('ascii'))
 
         self.s.setblocking(0)
 
-        self.buf = ''
-        self.wbuf = ''
+        self.buf = b''
+        self.wbuf = b''
 
     def fileno(self):
         return self.s.fileno()
@@ -84,9 +84,9 @@ class SSLTunnel(SSLConnection):
                 # wait for entire line if needed
                 if not b'\r\n' in self.buf:
                     return
-                lines = self.buf.split('\r\n')
-                parts = lines[0].split(' ', 3)
-                logging.error('Server returned error: %s' % parts[-1])
+                lines = self.buf.split(b'\r\n')
+                parts = lines[0].split(b' ', 3)
+                logging.error('Server returned error: %s' % parts[-1].decode('utf-8', errors='replace'))
                 sys.exit(1)
 
             plen, = struct.unpack('>L', self.buf[:4])
@@ -108,11 +108,8 @@ class SSLTunnel(SSLConnection):
         while len(self.wbuf):
             packet = self.wbuf[:1514]
             buf = struct.pack('>L', len(packet)) + packet
-            n = self.s.sendall(buf)
-            if n == len(buf):
-                self.wbuf = self.wbuf[len(packet):]
-            else:
-                return
+            self.s.sendall(buf)
+            self.wbuf = self.wbuf[len(packet):]
 
     def close(self):
         self.s.close()

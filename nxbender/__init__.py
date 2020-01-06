@@ -1,7 +1,7 @@
-import nx
+from . import nx
 import configargparse
 import requests
-import sslconn
+from . import sslconn
 import logging
 import getpass
 
@@ -41,10 +41,10 @@ def main():
 
     try:
         sess.run()
-    except requests.exceptions.SSLError, e:
+    except requests.exceptions.SSLError as e:
         logging.error("SSL error: %s" % e)
         # print the server's fingerprint for the user to consider
         sslconn.print_fingerprint(args.server)
-    except requests.exceptions.ConnectionError, e:
+    except requests.exceptions.ConnectionError as e:
         message = e.message.reason.message.split(':')[1:][-1]   # yuk
         logging.error("Error connecting to remote host: %s" % message)

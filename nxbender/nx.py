@@ -1,13 +1,18 @@
 #!/usr/bin/env python2
 import requests
 import logging
-import ppp
+from . import ppp
 import pyroute2
 import ipaddress
 import atexit
 
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 class FingerprintAdapter(HTTPAdapter):
     """"Transport adapter" that allows us to pin a fingerprint for the `requests` library."""
@@ -101,7 +106,7 @@ class NXSession(object):
 
         # Very dodgily avoid actually parsing the HTML
         for line in resp.iter_lines():
-            line = line.strip()
+            line = line.strip().decode('utf-8', errors='replace')
             if line.startswith('<'):
                 continue
 

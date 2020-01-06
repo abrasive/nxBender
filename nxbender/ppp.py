@@ -4,7 +4,7 @@ import pty
 import os
 import logging
 import sys
-import sslconn
+from . import sslconn
 import ssl
 import signal
 import select
@@ -42,7 +42,7 @@ class PPPSession(object):
                                          stdin = slave,
                                          stdout = slave,
                                          stderr = subprocess.PIPE)
-        except OSError, e:
+        except OSError as e:
             logging.error("Unable to start pppd: %s" % e.strerror)
             sys.exit(1)
 
@@ -70,9 +70,9 @@ class PPPSession(object):
                 stop = self._pump()
                 if stop:
                     break
-        except ssl.SSLError, e:     # unexpected
+        except ssl.SSLError as e:     # unexpected
             logging.exception(e)
-        except socket.error, e:     # expected (peer disconnect)
+        except socket.error as e:     # expected (peer disconnect)
             logging.error(e.strerror)
         finally:
             if self.pppd.poll() is not None:    # pppd caused termination
@@ -113,10 +113,10 @@ class PPPSession(object):
             self.tunsock.write_pump()
 
         if self.pppd.stderr in r:
-            line = self.pppd.stderr.readline().strip()
+            line = self.pppd.stderr.readline().strip().decode('utf-8', errors='replace')
 
             if self.options.show_ppp_log:
-                print "pppd: %s" % line
+                print("pppd: %s" % line)
 
             if line.startswith("remote IP address"):
                 remote_ip = line.split(' ')[-1]
