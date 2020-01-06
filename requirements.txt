@@ -2,3 +2,4 @@ ConfigArgParse
 ipaddress
 pyroute2
 requests
+colorlog

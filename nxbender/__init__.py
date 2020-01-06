@@ -4,6 +4,7 @@ import requests
 from . import sslconn
 import logging
 import getpass
+from colorlog import ColoredFormatter
 
 parser = configargparse.ArgumentParser(
         description='Connect to a netExtender VPN',
@@ -35,7 +36,18 @@ def main():
     if not args.password:
         args.password = getpass.getpass()
 
-    logging.basicConfig(level=loglevel, format='%(levelname)s: %(message)s')
+
+    formatter = ColoredFormatter(
+            "%(log_color)s%(levelname)-8s%(reset)s %(message_log_color)s%(message)s",
+            secondary_log_colors={
+                    'message': {
+                            'ERROR':    'red',
+                            'CRITICAL': 'red'
+                    }
+            }
+    )
+    logging.basicConfig(level=loglevel)
+    logging.getLogger().handlers[0].setFormatter(formatter)
 
     sess = nx.NXSession(args)
 
