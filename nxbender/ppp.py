@@ -57,6 +57,7 @@ class PPPSession(object):
 
         def sigint(*args):
             logging.info('caught SIGINT, signalling pppd')
+            self.killing_pppd = True
             self.pppd.send_signal(signal.SIGTERM)
             signal.signal(signal.SIGINT, sigint_twice)
             os.kill(os.getpid(), signal.SIGHUP) # break out of select()
@@ -75,10 +76,14 @@ class PPPSession(object):
         except socket.error as e:     # expected (peer disconnect)
             logging.error(e.strerror)
         finally:
-            if self.pppd.poll() is not None:    # pppd caused termination
-                logging.error("pppd exited with code %d" % self.pppd.poll())
+            code = self.pppd.poll()
+            if code is not None:    # pppd caused termination
+                logger = logging.error
+                if getattr(self, 'killing_pppd', False) and code == 5:
+                    logger = logging.info
+                logger("pppd exited with code %d" % code)
 
-                if self.pppd.poll() in [2, 3]:
+                if code in [2, 3]:
                     logging.warn("Are you root? You almost certainly need to be root")
             else:
                 self.pppd.send_signal(signal.SIGHUP)
