@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='nxBender',
-      version='0.2.0',
+      version='0.3.0',
       packages=['nxbender'],
       entry_points={
           'console_scripts': [
@@ -12,5 +12,7 @@ setup(name='nxBender',
           'ConfigArgParse',
           'ipaddress',
           'pyroute2',
+          'requests',
+          'colorlog',
       ],
      )
