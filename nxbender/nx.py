@@ -110,7 +110,10 @@ class NXSession(object):
             if line.startswith('<'):
                 continue
 
-            key, value = line.split(' = ', 1)
+            try:
+                key, value = line.split(' = ', 1)
+            except ValueError:
+                logging.warn("Unexpected line in session start message: '%s'" % line)
 
             if key == 'Route':
                 routes.append(value)
