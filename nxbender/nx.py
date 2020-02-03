@@ -122,6 +122,8 @@ class NXSession(object):
             else:
                 logging.info('Duplicated srv_options value %s = %s' % (key, value))
 
+            logging.debug("srv_option '%s' = '%s'" % (key, value))
+
         self.srv_options = srv_options
         self.routes = routes
 

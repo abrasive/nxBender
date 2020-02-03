@@ -1,7 +1,5 @@
-from . import nx
 import configargparse
 import requests
-from . import sslconn
 import logging
 import getpass
 from colorlog import ColoredFormatter
@@ -21,14 +19,17 @@ parser.add_argument('-d', '--domain', required=True)
 
 parser.add_argument('-f', '--fingerprint', help='Verify server\'s SSL certificate has this fingerprint. Overrides all other certificate verification.')
 
-parser.add_argument('-q', '--quiet', help='Don\'t output basic info whilst running')
+parser.add_argument('--debug', action='store_true', help='Show debugging information')
+parser.add_argument('-q', '--quiet', action='store_true', help='Don\'t output basic info whilst running')
 parser.add_argument('--show-ppp-log', action='store_true', help='Print PPP log messages to stdout')
 
 
 def main():
     args = parser.parse_args()
 
-    if args.quiet:
+    if args.debug:
+        loglevel = logging.DEBUG
+    elif args.quiet:
         loglevel = logging.WARNING
     else:
         loglevel = logging.INFO
@@ -48,6 +49,16 @@ def main():
     )
     logging.basicConfig(level=loglevel)
     logging.getLogger().handlers[0].setFormatter(formatter)
+
+    if args.debug:
+        try:
+            from http.client import HTTPConnection # py3
+        except ImportError:
+            from httplib import HTTPConnection # py2
+
+        HTTPConnection.debuglevel = 2
+
+    from . import nx, sslconn
 
     sess = nx.NXSession(args)
 
