@@ -25,7 +25,9 @@ class SSLConnection(object):
     def fingerprint(self):
         cert = self.s.getpeercert(True)
         raw = hashlib.sha1(cert).digest()
-        return ':'.join(['%02x' % ord(c) for c in raw])
+        if isinstance(raw, str):    # py2
+            raw = map(ord, raw)
+        return ':'.join(['%02x' % c for c in raw])
 
 def print_fingerprint(host):
     conn = SSLConnection(None, host, 443)
