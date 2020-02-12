@@ -23,6 +23,9 @@ parser.add_argument('--debug', action='store_true', help='Show debugging informa
 parser.add_argument('-q', '--quiet', action='store_true', help='Don\'t output basic info whilst running')
 parser.add_argument('--show-ppp-log', action='store_true', help='Print PPP log messages to stdout')
 
+# Investigating
+parser.add_argument('--use-swap', action='store_true', help='Use swap cookie as sessionID')
+
 
 def main():
     args = parser.parse_args()

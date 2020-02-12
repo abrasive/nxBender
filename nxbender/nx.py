@@ -132,7 +132,12 @@ class NXSession(object):
         Begin PPP tunneling.
         """
 
-        pppd = ppp.PPPSession(self.options, self.srv_options['SessionId'], routecallback=self.setup_routes)
+        if self.options.use_swap:
+            auth_key = self.session.cookies['swap']
+        else:
+            auth_key = self.srv_options['SessionId']
+
+        pppd = ppp.PPPSession(self.options, auth_key, routecallback=self.setup_routes)
         pppd.run()
 
     def setup_routes(self, gateway):
