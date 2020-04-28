@@ -109,6 +109,8 @@ class NXSession(object):
             line = line.strip().decode('utf-8', errors='replace')
             if line.startswith('<'):
                 continue
+            if line.startswith('}<'):
+                continue
 
             try:
                 key, value = line.split(' = ', 1)
@@ -132,10 +134,15 @@ class NXSession(object):
         Begin PPP tunneling.
         """
 
-        if self.options.use_swap:
+        tunnel_version = self.srv_options.get('NX_TUNNEL_PROTO_VER', None)
+
+        if tunnel_version is None:
             auth_key = self.session.cookies['swap']
-        else:
+        elif tunnel_version == '2.0':
             auth_key = self.srv_options['SessionId']
+        else:
+            logging.warn("Unknown tunnel version '%s'" % tunnel_version)
+            auth_key = self.srv_options['SessionId']    # a guess
 
         pppd = ppp.PPPSession(self.options, auth_key, routecallback=self.setup_routes)
         pppd.run()
