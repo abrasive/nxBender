@@ -6,20 +6,26 @@ Supports basic IPv4 connectivity with routing and DNS.
 
 ## Requirements
 
-Install Python dependencies with:
+You can install the package with:
+
+```
+    pip install .
+```
+
+You will also need `pppd`.
+
+For manual development, install Python dependencies with:
 
 ```
     pip install -r requirements.txt
 ```
-
-You will also need `pppd`.
 
 ## Usage
 
 Very simply:
 
 ```
-    sudo ./nxBender --server my-sslvpn-host.com -u username -p password -d domainname
+    sudo nxBender --server my-sslvpn-host.com -u username -p password -d domainname
 ```
 `-p password`  is optional, if not supplied it will ask interactively on the commandline
 
