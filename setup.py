@@ -10,7 +10,6 @@ setup(name='nxBender',
       },
       install_requires=[
           'ConfigArgParse',
-          'ipaddress',
           'pyroute2',
           'requests',
           'colorlog',
