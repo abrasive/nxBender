@@ -18,6 +18,7 @@ parser.add_argument('-p', '--password', required=False)
 parser.add_argument('-d', '--domain', required=True)
 
 parser.add_argument('-f', '--fingerprint', help='Verify server\'s SSL certificate has this fingerprint. Overrides all other certificate verification.')
+parser.add_argument('-r', '--use-resolvconf', default=False, help='Set DNS servers from HTTPS reply using resolvconf.', action='store_true')
 
 parser.add_argument('--debug', action='store_true', help='Show debugging information')
 parser.add_argument('-q', '--quiet', action='store_true', help='Don\'t output basic info whilst running')
