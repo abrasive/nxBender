@@ -18,6 +18,7 @@ parser.add_argument('-p', '--password', required=False)
 parser.add_argument('-d', '--domain', required=True)
 
 parser.add_argument('-f', '--fingerprint', help='Verify server\'s SSL certificate has this fingerprint. Overrides all other certificate verification.')
+parser.add_argument('-m', '--mtu', type=int, default=1280, help='Connection Maximum Transmission Unit (MTU), used to determine size of packets sent to server.')
 
 parser.add_argument('--debug', action='store_true', help='Show debugging information')
 parser.add_argument('-q', '--quiet', action='store_true', help='Don\'t output basic info whilst running')
