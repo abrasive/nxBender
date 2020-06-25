@@ -44,17 +44,10 @@ class ResolvConf(object):
         logging.debug("DNS settings to add:")
         for line in resolv_conf_lines:
             logging.debug(f'\t{line}')
-        try:
-            resolvconf = subprocess.run(['resolvconf', '-a'] + [device],
-                                         text = True,
-                                         input ='\n'.join(resolv_conf_lines),
-                                         check = True
-                                         )
-        except OSError as e:
-            logging.error("Unable to run resolvconf: %s" % e.strerror)
-        except subprocess.CalledProcessError as err:
-            logging.error(
-                f'resolvconf exited with status {err.returncode}: {err.stdout} {err.stderr}')
+
+        data = '\n'.join(resolv_conf_lines)
+        args = ['resolvconf', '-a'] + [device]
+        self._RunResolvConf(args, data)
 
     def RemoveDns(self, device:str, srv_options):
         """Called after the PPP channel disconnects to remove DNS settings using resolvconf.
@@ -63,14 +56,23 @@ class ResolvConf(object):
         param srv_options Dict of settings passed down by the server on connect
         """
         data =""
+        args = ['resolvconf', '-f', '-d'] + [device]
+        self._RunResolvConf(args, data)
+
+    def _RunResolvConf(self, args:list, input_data:str):
+        """Encapsulate running the resolvconf binary.
+
+        param args The list of arguments to pass
+        param input_data The input to pipe to std input
+        """
         try:
-            resolvconf = subprocess.run(['resolvconf', '-f', '-d'] + [device],
+            resolvconf = subprocess.run(args,
                                          text = True,
-                                         input = data,
+                                         input = input_data,
                                          check = True
                                          )
-        except OSError as e:
-            logging.error("Unable to run resolvconf: %s" % e.strerror)
+        except OSError as err:
+            logging.error(f"Unable to run {args[0]}: {err.strerror}")
         except subprocess.CalledProcessError as err:
             logging.error(
-                f'resolvconf exited with status {err.returncode}: {err.stdout} {err.stderr}')
+                f'{args[0]} exited with status {err.returncode}: {err.stdout} {err.stderr}')
