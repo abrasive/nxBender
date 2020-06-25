@@ -15,6 +15,7 @@ class PPPSession(object):
         self.options = options
         self.session_id = session_id
         self.routecallback = routecallback
+        self.device = None  # the network device name e.g. ppp0
 
         self.pppargs = [
                 'debug', 'debug',
@@ -126,6 +127,12 @@ class PPPSession(object):
             if self.options.show_ppp_log:
                 print("pppd: %s" % line)
 
+            # parse out the device used for the connection
+            if line.startswith("Using interface"):
+                # store to be passed out later
+                self.device = line.split(' ')[-1]
+
+            # parse out the remote IP address of the connection
             if line.startswith("remote IP address"):
                 remote_ip = line.split(' ')[-1]
-                self.routecallback(remote_ip)
+                self.routecallback(remote_ip, self.device)

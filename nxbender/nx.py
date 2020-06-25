@@ -26,8 +26,14 @@ class FingerprintAdapter(HTTPAdapter):
             block=block, assert_fingerprint=self.fingerprint)
 
 class NXSession(object):
-    def __init__(self, options):
+    def __init__(self, options, dns_handler = None):
+        """Constructor
+
+        param options The parsed command line options to the program.
+        param dns_handler Object which will be used to apply DNS settings to the system.
+        """
         self.options = options
+        self.dns_handler = dns_handler
 
     def run(self):
         self.host = self.options.server + ':%d' % self.options.port
@@ -112,10 +118,14 @@ class NXSession(object):
             if line.startswith('}<'):
                 continue
 
+            # split without whitespace because servers are inconsistent
             try:
-                key, value = line.split(' = ', 1)
+                key, value = line.split('=', 1)
             except ValueError:
                 logging.warn("Unexpected line in session start message: '%s'" % line)
+            # remove whitespace left from splitting
+            key = key.strip()
+            value = value.strip()
 
             if key == 'Route':
                 routes.append(value)
@@ -144,10 +154,30 @@ class NXSession(object):
             logging.warn("Unknown tunnel version '%s'" % tunnel_version)
             auth_key = self.srv_options['SessionId']    # a guess
 
-        pppd = ppp.PPPSession(self.options, auth_key, routecallback=self.setup_routes)
+        pppd = ppp.PPPSession(self.options, auth_key, routecallback=self.post_connect)
         pppd.run()
+        # reach here when PPPD exits
+        if self.dns_handler is not None:
+            # remove DNS entries as they will have stopped working
+            self.dns_handler.RemoveDns(self.device, self.srv_options)
+
+    def post_connect(self, gateway:str, device:str):
+        """Called after the PPP channel connects and obtains an IP address to complete setup.
+
+        param gateway The IP address of the far end of the connection.
+        param device The name of the local network device, e.g. ppp0
+        """
+        self.device = device
+        # set IP routes
+        self.setup_routes(gateway)
+        # if needed, set DNS servers
+        if self.dns_handler is not None:
+            self.dns_handler.SetDns(device, self.srv_options)
 
     def setup_routes(self, gateway):
+        """Called after the PPP channel connects and obtains an IP address to create routing table
+        entries.
+        """
         ip = pyroute2.IPRoute()
 
         for route in set(self.routes):
