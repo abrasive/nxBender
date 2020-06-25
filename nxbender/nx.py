@@ -112,10 +112,14 @@ class NXSession(object):
             if line.startswith('}<'):
                 continue
 
+            # split without whitespace because servers are inconsistent
             try:
-                key, value = line.split(' = ', 1)
+                key, value = line.split('=', 1)
             except ValueError:
                 logging.warn("Unexpected line in session start message: '%s'" % line)
+            # remove whitespace left from splitting
+            key = key.strip()
+            value = value.strip()
 
             if key == 'Route':
                 routes.append(value)
