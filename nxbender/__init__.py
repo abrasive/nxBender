@@ -61,7 +61,12 @@ def main():
 
     from . import nx, sslconn
 
-    sess = nx.NXSession(args)
+    dns_handler = None
+    if args.use_resolvconf:
+        from . import resolvconf
+        dns_handler = resolvconf.ResolvConf(args)
+
+    sess = nx.NXSession(args, dns_handler)
 
     try:
         sess.run()
