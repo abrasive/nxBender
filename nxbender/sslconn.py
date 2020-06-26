@@ -56,9 +56,6 @@ class SSLTunnel(SSLConnection):
 
         self.buf = b''
         self.wbuf = b''
-        # Set the length of lines over the TLS connection to ensure result fits in one packet.
-        # Overhead is 2 bytes at start, 2 bytes line ending
-        self.line_length = self.options.mtu - 4
 
     def fileno(self):
         return self.s.fileno()
@@ -111,7 +108,7 @@ class SSLTunnel(SSLConnection):
 
     def write_pump(self):
         while len(self.wbuf):
-            packet = self.wbuf[:self.line_length]
+            packet = self.wbuf[:self.options.max_line]
             buf = struct.pack('>L', len(packet)) + packet
             self.s.sendall(buf)
             self.wbuf = self.wbuf[len(packet):]
