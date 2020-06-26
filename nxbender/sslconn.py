@@ -108,7 +108,7 @@ class SSLTunnel(SSLConnection):
 
     def write_pump(self):
         while len(self.wbuf):
-            packet = self.wbuf[:1514]
+            packet = self.wbuf[:self.options.max_line]
             buf = struct.pack('>L', len(packet)) + packet
             self.s.sendall(buf)
             self.wbuf = self.wbuf[len(packet):]
