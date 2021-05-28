@@ -54,23 +54,37 @@ class NXSession(object):
         logging.info("Dialing up tunnel...")
         self.tunnel()
 
-    def login(self, username, password, domain):
+    def login(self, username, password, domain, extra_data={}):
+        data = {
+                'username': username,
+                'password': password,
+                'domain': domain,
+                'login': 'true',
+                }
+        data.update(extra_data)
+
         resp = self.session.post('https://%s/cgi-bin/userLogin' % self.host,
-                                 data={
-                                     'username': username,
-                                     'password': password,
-                                     'domain': domain,
-                                     'login': 'true',
-                                 },
+                                 data=data,
                                  headers={
                                      'X-NE-SESSIONPROMPT': 'true',
                                  },
                                 )
 
-        error = resp.headers.get('X-NE-Message', None)
-        error = resp.headers.get('X-NE-message', error)
-        if error:
-            raise IOError('Server returned error: %s' % error)
+        message = resp.headers.get('X-NE-Message', None)
+        message = resp.headers.get('X-NE-message', message)
+
+        two_factor = resp.headers.get('X-NE-tf', None)
+        if two_factor == '5':
+            logging.info('2FA required, prompting for response')
+            response = input(message + ' ')
+            return self.login(username, password, domain, extra_data={
+                'pstate': resp.headers.get('X-NE-rsastate'),
+                'state': 'RADIUSCHALLENGE',
+                'radiusReply': response,
+                })
+
+        if message:
+            raise IOError('Server returned error: %s' % message)
 
         atexit.register(self.logout)
 
