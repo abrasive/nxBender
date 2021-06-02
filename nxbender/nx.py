@@ -6,6 +6,7 @@ import pyroute2
 import ipaddress
 import atexit
 import subprocess
+import sys
 
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
@@ -37,7 +38,9 @@ def prompt_for_response(options, prompt_string):
     def expect(prefix):
         line = proc.stdout.readline().strip('\n')
         if not line.startswith(prefix):
-            raise ValueError('Unexpected response from pinentry: "%s"' % line)
+            logging.error('Unexpected response from pinentry: "%s"' % line)
+            sys.exit(1)
+
         return line[len(prefix)+1:]
 
     expect('OK')
@@ -132,7 +135,8 @@ class NXSession(object):
             raise IOError("Server requested two-factor auth method '%s', which we don't understand" % two_factor)
 
         if message:
-            raise IOError('Server returned error: %s' % message)
+            logging.error('Server returned error: "%s"' % message)
+            sys.exit(1)
 
         atexit.register(self.logout)
 
@@ -158,10 +162,12 @@ class NXSession(object):
                                     'supportipv6': 'no',
                                 },
                                )
+
         error = resp.headers.get('X-NE-Message', None)
         error = resp.headers.get('X-NE-message', error)
         if error:
-            raise IOError('Server returned error: %s' % error)
+            logging.error('Server returned error: "%s"' % error)
+            sys.exit(1)
 
         srv_options = {}
         routes = []
