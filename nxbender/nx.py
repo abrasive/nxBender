@@ -131,7 +131,7 @@ class NXSession(object):
                 'radiusReply': response,
                 })
 
-        if two_factor is not None:
+        if two_factor not in [None, '0']:
             raise IOError("Server requested two-factor auth method '%s', which we don't understand" % two_factor)
 
         if message:
