@@ -5,6 +5,7 @@ from . import ppp
 import pyroute2
 import ipaddress
 import atexit
+import subprocess
 
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.poolmanager import PoolManager
@@ -13,6 +14,50 @@ try:
     unicode
 except NameError:
     unicode = str
+
+def prompt_for_response(options, prompt_string):
+    pinentry = options.pinentry
+    if not pinentry:
+        pinentry = 'pinentry'
+
+    try:
+        proc = subprocess.Popen([pinentry],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                encoding='utf-8',
+                bufsize=0,
+                )
+    except FileNotFoundError:
+        if options.pinentry and options.pinentry != 'none':
+            # if we were explicitly told to use pinentry, this is an error
+            raise
+        else:
+            # fall back to terminal prompt
+            return input(prompt_string + ' ')
+
+    def expect(prefix):
+        line = proc.stdout.readline().strip('\n')
+        if not line.startswith(prefix):
+            raise ValueError('Unexpected response from pinentry: "%s"' % line)
+        return line[len(prefix)+1:]
+
+    expect('OK')
+
+    proc.stdin.write('SETTITLE nxBender\n')
+    expect('OK')
+
+    proc.stdin.write('SETDESC %s\n' % prompt_string.strip())
+    expect('OK')
+
+    proc.stdin.write('SETPROMPT Response:\n')
+    expect('OK')
+
+    proc.stdin.write('GETPIN\n')
+    response = expect('D')
+    expect('OK')
+
+    proc.stdin.close()
+    proc.wait()
+    return response
 
 class FingerprintAdapter(HTTPAdapter):
     """"Transport adapter" that allows us to pin a fingerprint for the `requests` library."""
@@ -76,12 +121,15 @@ class NXSession(object):
         two_factor = resp.headers.get('X-NE-tf', None)
         if two_factor == '5':
             logging.info('2FA required, prompting for response')
-            response = input(message + ' ')
+            response = prompt_for_response(self.options, message)
             return self.login(username, password, domain, extra_data={
                 'pstate': resp.headers.get('X-NE-rsastate'),
                 'state': 'RADIUSCHALLENGE',
                 'radiusReply': response,
                 })
+
+        if two_factor is not None:
+            raise IOError("Server requested two-factor auth method '%s', which we don't understand" % two_factor)
 
         if message:
             raise IOError('Server returned error: %s' % message)
