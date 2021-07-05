@@ -130,6 +130,22 @@ class NXSession(object):
                 'state': 'RADIUSCHALLENGE',
                 'radiusReply': response,
                 })
+        elif two_factor == '1':
+            logging.info('MFA required, prompting for response')
+            response = prompt_for_response(self.options, message)
+            resp = self.session.post('https://%s/cgi-bin/otpLogin' % self.host,
+                                     headers={
+                                         'X-NE-pda': 'true',
+                                     },
+                                     cookies={
+                                         'swap': resp.cookies['swap']
+                                     },
+                                     data={
+                                         'password': response
+                                     })
+            message = resp.headers.get('X-NE-Message', None)
+            message = resp.headers.get('X-NE-message', message)
+            two_factor = resp.headers.get('X-NE-tf', None)
 
         if two_factor not in [None, '0']:
             raise IOError("Server requested two-factor auth method '%s', which we don't understand" % two_factor)
